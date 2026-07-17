@@ -9,15 +9,18 @@ jobs:
   update-gist:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch 100 Random Nodes
+      - name: Fetch and Encode Nodes
         run: |
-          # 抓取你指定的 GitHub 公开高可用源
-          curl -s -L --connect-timeout 30 --retry 3 'https://raw.githubusercontent.com/ImYrS/FreeNodes/main/nodes.txt' > nodes.txt
+          # 1. 抓取原始节点
+          curl -s -L --connect-timeout 30 --retry 3 'https://raw.githubusercontent.com/ImYrS/FreeNodes/main/nodes.txt' > raw_nodes.txt
           
-          if [ ! -s nodes.txt ]; then
+          if [ ! -s raw_nodes.txt ]; then
             echo "Error: Fetched empty data"
             exit 1
           fi
+          
+          # 2. 核心：在海外直接把明文节点转码为 100% 兼容的标准 Base64 订阅包
+          base64 -w 0 raw_nodes.txt > nodes.txt
 
       - name: Push to Gist
         env:
@@ -30,4 +33,4 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/gists/$GIST_ID \
             -d "{\"files\":{\"nodes.txt\":{\"content\":$CONTENT}}}"
-          echo "Gist successfully updated!"
+          echo "Gist successfully updated with encoded data!"
