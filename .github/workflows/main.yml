@@ -3,7 +3,7 @@ name: Fetch and Update Gist
 on:
   schedule:
     - cron: '0 */6 * * *'
-  workflow_dispatch: # 必须单独占一行，且前面不能有空格！
+  workflow_dispatch:
 
 jobs:
   update-gist:
@@ -11,8 +11,8 @@ jobs:
     steps:
       - name: Fetch 100 Random Nodes
         run: |
-          # 加上了 30 秒连接超时和 3 次自动重试
-          curl -s -L --connect-timeout 30 --retry 3 'https://bglyquhwuqaz.us-west-1.clawcloudrun.com/api/v1/subscribe?token=g6ra!bujhj9vx*gyw4b-l1yh&target=v2ray&list=true' > nodes.txt
+          # 抓取你指定的 GitHub 公开高可用源
+          curl -s -L --connect-timeout 30 --retry 3 'https://raw.githubusercontent.com/ImYrS/FreeNodes/main/nodes.txt' > nodes.txt
           
           if [ ! -s nodes.txt ]; then
             echo "Error: Fetched empty data"
