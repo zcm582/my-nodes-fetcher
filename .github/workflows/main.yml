@@ -1,10 +1,33 @@
-- name: Fetch 100 Random Nodes
+name: Fetch and Update Gist
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # 必须单独占一行，且前面不能有空格！
+
+jobs:
+  update-gist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch 100 Random Nodes
         run: |
-          # --connect-timeout 30: 握手超时30秒
-          # --retry 3: 失败自动重试3次
+          # 加上了 30 秒连接超时和 3 次自动重试
           curl -s -L --connect-timeout 30 --retry 3 'https://bglyquhwuqaz.us-west-1.clawcloudrun.com/api/v1/subscribe?token=g6ra!bujhj9vx*gyw4b-l1yh&target=v2ray&list=true' > nodes.txt
           
           if [ ! -s nodes.txt ]; then
             echo "Error: Fetched empty data"
             exit 1
           fi
+
+      - name: Push to Gist
+        env:
+          GIST_ID: "dff18a206a8c8be5bebc323217c8534b"
+          GH_TOKEN: ${{ secrets.MY_GIST_TOKEN }}
+        run: |
+          CONTENT=$(cat nodes.txt | jq -aRs .)
+          curl -s -X PATCH \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/gists/$GIST_ID \
+            -d "{\"files\":{\"nodes.txt\":{\"content\":$CONTENT}}}"
+          echo "Gist successfully updated!"
