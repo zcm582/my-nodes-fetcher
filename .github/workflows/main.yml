@@ -1,36 +1,12 @@
-name: Fetch and Update Gist
-
-on:
-  schedule:
-    - cron: '0 */6 * * *'
-  workflow_dispatch:
-
-jobs:
-  update-gist:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fetch and Encode Nodes
+- name: Fetch and Encode Nodes
         run: |
-          # 1. 抓取原始节点
-          curl -s -L --connect-timeout 30 --retry 3 'https://raw.githubusercontent.com/ImYrS/FreeNodes/main/nodes.txt' > raw_nodes.txt
+          # 换成这个纯净的高可用混合源链接
+          curl -s -L --connect-timeout 30 --retry 3 'https://raw.githubusercontent.com/vfarid/v2ray-share/main/all_links.txt' > raw_nodes.txt
           
           if [ ! -s raw_nodes.txt ]; then
             echo "Error: Fetched empty data"
             exit 1
           fi
           
-          # 2. 核心：在海外直接把明文节点转码为 100% 兼容的标准 Base64 订阅包
+          # 保持 base64 整体转码打包
           base64 -w 0 raw_nodes.txt > nodes.txt
-
-      - name: Push to Gist
-        env:
-          GIST_ID: "dff18a206a8c8be5bebc323217c8534b"
-          GH_TOKEN: ${{ secrets.MY_GIST_TOKEN }}
-        run: |
-          CONTENT=$(cat nodes.txt | jq -aRs .)
-          curl -s -X PATCH \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/gists/$GIST_ID \
-            -d "{\"files\":{\"nodes.txt\":{\"content\":$CONTENT}}}"
-          echo "Gist successfully updated with encoded data!"
