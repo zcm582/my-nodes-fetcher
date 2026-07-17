@@ -1,0 +1,36 @@
+name: Fetch and Update Gist
+
+on:
+  schedule:
+    # 国际标准时间 (UTC) 每 6 小时运行一次 (北京时间: 2点、8点、14点、20点)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # 允许你在网页上手动点击按钮触发
+
+jobs:
+  update-gist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch 100 Random Nodes
+        run: |
+          # 使用单引号规避感叹号，通过 curl 抓取大佬的接口
+          curl -s -L 'https://bglyquhwuqaz.us-west-1.clawcloudrun.com/api/v1/subscribe?token=g6ra!bujhj9vx*gyw4b-l1yh&target=v2ray&list=true' > nodes.txt
+          
+          # 检查抓到的内容是不是空的
+          if [ ! -s nodes.txt ]; then
+            echo "Error: Fetched empty data"
+            exit 1
+          fi
+
+      - name: Push to Gist
+        env:
+          GIST_ID: "dff18a206a8c8be5bebc323217c8534b"
+          GH_TOKEN: ${{ secrets.MY_GIST_TOKEN }}
+        run: |
+          # 将抓到的纯文本进行 JSON 转义，塞进 Gist 的 API 里
+          CONTENT=$(cat nodes.txt | jq -aRs .)
+          curl -s -X PATCH \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/gists/$GIST_ID \
+            -d "{\"files\":{\"nodes.txt\":{\"content\":$CONTENT}}}"
+          echo "Gist successfully updated!"
